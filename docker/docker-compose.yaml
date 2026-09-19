@@ -1,0 +1,33 @@
+# Open WebUI on the host network, using the host's LiteLLM Proxy as the model backend.
+#
+# Variables (shell env or the .env in the repo root):
+#   LITELLM_MASTER_KEY  master key of the LiteLLM Proxy (required)
+#   PORT                port Open WebUI listens on (default 8080)
+#
+# The container shares the host's network: there is no port mapping, and 127.0.0.1 is the host
+# (LiteLLM is expected at 127.0.0.1:4000).
+#
+# Run it with start_webui.sh, or from the repo root with
+#   docker compose --project-directory . -f docker/docker-compose.yaml ...
+# Without --project-directory the project name changes: a new empty data volume is used
+# and the root .env is not read.
+#
+# ENABLE_OLLAMA_API and OPENAI_API_* are only read on first launch (empty data volume);
+# afterwards change them in Admin Settings > Connections.
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    network_mode: host
+    environment:
+      - ENABLE_OLLAMA_API=false
+      - OPENAI_API_BASE_URLS=http://127.0.0.1:4000/v1
+      - OPENAI_API_KEYS=${LITELLM_MASTER_KEY}
+      - PORT=${PORT:-8080}
+    volumes:
+      - open-webui:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  open-webui:
